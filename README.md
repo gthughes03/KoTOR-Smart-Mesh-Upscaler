@@ -18,7 +18,8 @@ If this tool saves you time, you can [buy me a coffee](https://buymeacoffee.com/
 - **Checks.** UV health report with repair, head-proportion check against anatomy presets, and model validation (catches the size/offset mistakes that crash the game).
 - **Safe install.** Validates the model, backs up anything it replaces (`.bak`), copies to your Override folder and verifies by MD5.
 - **FBX round trip.** Export to binary FBX, edit in Blender, import back; skin weights are transferred automatically.
-- **Built-in 3D viewer.** Orbit, pan, zoom, wireframe, original / upscaled / split view.
+- **Built-in 3D viewer.** Orbit, pan, zoom, wireframe, original / upscaled / split view. Both sides of every face are drawn, so rooms and buildings show whole from outside; parts the tool can't edit yet are shown in grey.
+- **Show / hide meshes.** Click the circle next to a mesh in the list to hide or show it in the viewer, or use Show all / Hide all.
 
 ## Download
 
@@ -33,7 +34,7 @@ For Beta's and exclusive previews to future .exe's, please go to my product page
 4. **Save upscaled model...** (a `.bak` is kept of anything overwritten), then **Validate model** and **Safe install to Override...**
 5. Fully restart the game.
 
-Viewer: drag to orbit, right-drag to pan, mouse wheel to zoom.
+Viewer: drag to orbit, right-drag to pan, mouse wheel to zoom. Click a mesh's circle (show column) to hide or show it.
 
 Notes:
 - ASCII models are not supported; extract them as binary.
