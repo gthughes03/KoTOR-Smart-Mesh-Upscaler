@@ -6,7 +6,7 @@ A Windows tool that adds real geometry to the low-poly models of **Star Wars: Kn
 
 ## Support
 
-If this tool saves you time, you can [buy me a coffee]((https://buymeacoffee.com/gthughes2004)). ☕
+If this tool saves you time, you can [buy me a coffee] (https://buymeacoffee.com/gthughes2004) . ☕
 
 ## Features
 
