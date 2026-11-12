@@ -1,0 +1,16 @@
+# build output
+build/
+dist/
+__pycache__/
+*.pyc
+*.exe
+
+# game files and test data (never commit these)
+*.mdl
+*.mdx
+*.mdl.bak
+*.mdx.bak
+*.tga
+*.tpc
+*.dds
+*.fbx

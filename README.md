@@ -6,7 +6,7 @@ A Windows tool that adds real geometry to the low-poly models of **Star Wars: Kn
 
 ## Support
 
-If this tool saves you time, you can [buy me a coffee] (https://buymeacoffee.com/gthughes2004) . ☕
+If this tool saves you time, you can [buy me a coffee](https://buymeacoffee.com/gthughes2004) . ☕
 
 ## Features
 
@@ -23,7 +23,7 @@ If this tool saves you time, you can [buy me a coffee] (https://buymeacoffee.com
 ## Download
 
 Get `KotorMeshUpscaler.exe` from the [Releases](../../releases) page. No install needed. 
-For Beta's and exclusive previews to future .exe's, please go to my product page and support me on [buy me a coffee] (https://buymeacoffee.com/gthughes2004/e/597608) . ☕
+For Beta's and exclusive previews to future .exe's, please go to my product page and support me on [buy me a coffee](https://buymeacoffee.com/gthughes2004/e/597608) . ☕
 
 ## Usage
 

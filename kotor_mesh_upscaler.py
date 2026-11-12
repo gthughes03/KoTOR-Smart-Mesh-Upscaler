@@ -9,6 +9,9 @@ KotOR MDL/MDX Mesh Upscaler  (KotOR 1 & 2, PC binary format)
 * Writes by appending new data and repointing the mesh headers, so animations, controllers,
   bones, dangly/saber/walkmesh nodes and every other pointer in the file stay valid.
 
+* v3.1: the viewer draws both sides of every face (rooms no longer lose walls seen from outside) and shows
+  meshes it can't edit yet in grey.
+
 Requires: python 3.8+, numpy, Pillow.   (tkinter ships with python)
 """
 import os, sys, struct, math, shutil, re
@@ -1044,9 +1047,12 @@ def render(items, cam, W, H, wire=False, bg=(24, 26, 30)):
             fn = _unit(fn + vn)
         vnv = fn @ R.T
         facing = vnv[:, 1] < 0.0                                  # towards the viewer (view dir = +y into screen)
-        light = np.clip(-vnv[:, 1] * 0.75 + vnv[:, 2] * 0.35 + vnv[:, 0] * 0.15 + 0.2, 0.05, 1.0)
+        # both sides are drawn: rooms and buildings are modelled to be seen from inside, so from outside their walls
+        # face away and would vanish until the view turned. A back face is lit as if turned round, a little darker.
+        vl = np.where(facing[:, None], vnv, -vnv)
+        light = np.clip(-vl[:, 1] * 0.75 + vl[:, 2] * 0.35 + vl[:, 0] * 0.15 + 0.2, 0.05, 1.0) * np.where(facing, 1.0, 0.7)
         zz = depth[fa].mean(1)
-        for i in np.nonzero(facing | wire)[0]:
+        for i in range(len(fa)):
             polys.append((zz[i], (sx[fa[i, 0]], sy[fa[i, 0]], sx[fa[i, 1]], sy[fa[i, 1]], sx[fa[i, 2]], sy[fa[i, 2]]), light[i], col))
     polys.sort(key=lambda t: -t[0])
     for z, xy, l, col in polys:
@@ -1270,7 +1276,7 @@ def run_gui():
     from PIL import ImageTk
 
     root = tk.Tk()
-    root.title("KotOR Mesh Upscaler")
+    root.title("KotOR Mesh Upscaler 3.1")
     root.geometry("1240x1060")
     hcache = {}
     S = dict(model=None, up={}, cam=Camera(), img=None, drag=None)
@@ -1377,9 +1383,11 @@ def run_gui():
             tv.insert("", "end", iid=str(i), values=(m.vc, m.fc, "yes" if S["dmesh"][i] else "no", "%s  [%s]%s" % (m.name, m.tex, "" if m.render else "  (hidden)")))
             if m.ok and m.render and m.tex.upper() not in ("NULL", ""): pre.append(str(i))
         tv.selection_set(pre)
-        allp = np.concatenate([mdl.world_pos(m) for m in mdl.meshes if m.ok and m.render])
+        allp = np.concatenate([mdl.world_pos(m) for m in mdl.meshes if m.render and hasattr(m, "pos") and len(m.pos)])
         S["cam"].fit(allp)
-        info.set("%d meshes; %d selected (textured, renderable)." % (len(mdl.meshes), len(pre)))
+        nro = sum(1 for m in mdl.meshes if not m.ok and "vertex channels" in m.why)
+        info.set("%d meshes; %d selected (textured, renderable).%s" % (len(mdl.meshes), len(pre),
+                 ("  %d shown grey can't be edited yet (extra vertex data, e.g. lightmapped room parts)." % nro) if nro else ""))
         draw()
 
     def region_editor():
@@ -1564,7 +1572,13 @@ def run_gui():
         mdl = S["model"]
         out = []
         for i, m in enumerate(mdl.meshes):
-            if not m.ok or (not m.render and i not in S["up"]) or (m.tex.upper() in ("NULL", "") and i not in S["up"]): continue
+            if not m.ok:
+                # meshes this version can't edit (lightmapped room parts with extra vertex data) are still shown,
+                # plain grey, so a room or building is seen whole
+                if m.render and hasattr(m, "pos") and hasattr(m, "faces") and len(m.faces) and m.faces.max() < len(m.pos):
+                    out.append((mdl.world_pos(m), None if m.norm is None else _xf_n(m, m.norm), m.faces, (105, 110, 120)))
+                continue
+            if (not m.render and i not in S["up"]) or (m.tex.upper() in ("NULL", "") and i not in S["up"]): continue
             col = (200, 190, 175) if i in S["up"] else (150, 160, 175)
             if which == "up" and i in S["up"]:
                 u = S["up"][i]
