@@ -4,6 +4,10 @@ A Windows tool that adds real geometry to the low-poly models of **Star Wars: Kn
 
 > Screenshot: original vs. upscaled (split view) — *add `docs/split-view.png` here*
 
+## Support
+
+If this tool saves you time, you can [buy me a coffee]((https://buymeacoffee.com/gthughes2004)). ☕
+
 ## Features
 
 - **Native MDL/MDX reader and writer.** No PyKotor needed. New data is appended and the mesh headers are repointed, so animations, controllers, bones, dangly/saber/walkmesh nodes and every other pointer stay valid.
@@ -53,9 +57,6 @@ pyinstaller --noconfirm KotorMeshUpscaler.spec
 
 The executable is written to `dist\KotorMeshUpscaler.exe`.
 
-## Support
-
-If this tool saves you time, you can [buy me a coffee](https://www.buymeacoffee.com/YOUR-NAME). ☕
 
 ## License
 
