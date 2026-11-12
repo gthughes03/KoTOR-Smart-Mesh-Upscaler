@@ -12,6 +12,7 @@ KotOR MDL/MDX Mesh Upscaler  (KotOR 1 & 2, PC binary format)
 * v3.1: the viewer draws both sides of every face (rooms no longer lose walls seen from outside) and shows
   meshes it can't edit yet in grey.
 * v3.2: a show/hide toggle per mesh in the mesh list (click its circle), plus Show all / Hide all.
+* v3.3: the control panel scrolls (scroll bar + mouse wheel) and the window fits the screen.
 
 Requires: python 3.8+, numpy, Pillow.   (tkinter ships with python)
 """
@@ -1277,12 +1278,33 @@ def run_gui():
     from PIL import ImageTk
 
     root = tk.Tk()
-    root.title("KotOR Mesh Upscaler 3.2")
-    root.geometry("1240x1060")
+    root.title("KotOR Mesh Upscaler 3.3")
+    # fit the screen (with Windows display scaling the controls take more room than the 1060 px this was laid out for)
+    root.geometry("1240x%d" % max(600, min(1060, root.winfo_screenheight() - 90)))
     hcache = {}
     S = dict(model=None, up={}, cam=Camera(), img=None, drag=None)
 
-    left = ttk.Frame(root, padding=8); left.pack(side="left", fill="y")
+    # the control panel scrolls: on a smaller or scaled screen the lower buttons would otherwise be cut off
+    lwrap = ttk.Frame(root); lwrap.pack(side="left", fill="y")
+    lcan = tk.Canvas(lwrap, highlightthickness=0, borderwidth=0, background=ttk.Style().lookup("TFrame", "background") or "#f0f0f0")
+    lsb = ttk.Scrollbar(lwrap, orient="vertical", command=lcan.yview)
+    lcan.configure(yscrollcommand=lsb.set)
+    lsb.pack(side="right", fill="y"); lcan.pack(side="left", fill="y")
+    left = ttk.Frame(lcan, padding=8)
+    lcan.create_window((0, 0), window=left, anchor="nw")
+    def _left_resized(e=None):
+        lcan.configure(scrollregion=lcan.bbox("all"), width=left.winfo_reqwidth())
+    left.bind("<Configure>", _left_resized)
+    def _left_wheel(e):
+        # the wheel scrolls the panel when the pointer is over it (lists and drop-downs keep their own scrolling;
+        # over the 3D view the wheel still zooms)
+        w = root.winfo_containing(e.x_root, e.y_root)
+        if w is None or not str(w).startswith(str(lcan)) or w.winfo_class() in ("Treeview", "TCombobox", "Listbox"): return
+        if lcan.yview() == (0.0, 1.0): return
+        d = e.delta if e.delta else (120 if getattr(e, "num", 0) == 4 else -120)
+        lcan.yview_scroll(-1 if d > 0 else 1, "units")
+    root.bind_all("<MouseWheel>", _left_wheel, add="+")
+    root.bind_all("<Button-4>", _left_wheel, add="+"); root.bind_all("<Button-5>", _left_wheel, add="+")
     cv = tk.Canvas(root, bg="#181a1e", highlightthickness=0); cv.pack(side="right", fill="both", expand=True)
 
     pathv = tk.StringVar()

@@ -34,6 +34,8 @@ For Beta's and exclusive previews to future .exe's, please go to my product page
 4. **Save upscaled model...** (a `.bak` is kept of anything overwritten), then **Validate model** and **Safe install to Override...**
 5. Fully restart the game.
 
+The control panel scrolls (scroll bar, or the mouse wheel over the panel) if it doesn't fit your screen.
+
 Viewer: drag to orbit, right-drag to pan, mouse wheel to zoom. Click a mesh's circle (show column) to hide or show it.
 
 Notes:
