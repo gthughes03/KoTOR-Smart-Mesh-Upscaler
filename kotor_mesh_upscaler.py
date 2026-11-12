@@ -11,6 +11,7 @@ KotOR MDL/MDX Mesh Upscaler  (KotOR 1 & 2, PC binary format)
 
 * v3.1: the viewer draws both sides of every face (rooms no longer lose walls seen from outside) and shows
   meshes it can't edit yet in grey.
+* v3.2: a show/hide toggle per mesh in the mesh list (click its circle), plus Show all / Hide all.
 
 Requires: python 3.8+, numpy, Pillow.   (tkinter ships with python)
 """
@@ -1276,7 +1277,7 @@ def run_gui():
     from PIL import ImageTk
 
     root = tk.Tk()
-    root.title("KotOR Mesh Upscaler 3.1")
+    root.title("KotOR Mesh Upscaler 3.2")
     root.geometry("1240x1060")
     hcache = {}
     S = dict(model=None, up={}, cam=Camera(), img=None, drag=None)
@@ -1289,20 +1290,42 @@ def run_gui():
     ttk.Entry(left, textvariable=pathv, width=44).pack(anchor="w")
     ttk.Button(left, text="Open...", command=lambda: open_file()).pack(anchor="w", pady=4)
 
-    ttk.Label(left, text="Meshes (ctrl/shift-click to choose what to upscale)").pack(anchor="w", pady=(8, 0))
-    tv = ttk.Treeview(left, columns=("v", "f", "d", "tex"), show="headings", height=8, selectmode="extended")
-    for c, w_ in (("v", 44), ("f", 44), ("d", 40), ("tex", 130)):
-        tv.heading(c, text={"v": "verts", "f": "faces", "d": "disp", "tex": "name / texture"}[c]); tv.column(c, width=w_)
+    ttk.Label(left, text="Meshes (ctrl/shift-click to choose what to upscale; click \u25c9 to show / hide)").pack(anchor="w", pady=(8, 0))
+    tv = ttk.Treeview(left, columns=("eye", "v", "f", "d", "tex"), show="headings", height=8, selectmode="extended")
+    for c, w_ in (("eye", 30), ("v", 44), ("f", 44), ("d", 40), ("tex", 116)):
+        tv.heading(c, text={"eye": "show", "v": "verts", "f": "faces", "d": "disp", "tex": "name / texture"}[c]); tv.column(c, width=w_, anchor="center" if c == "eye" else "w")
+    EYE_ON, EYE_OFF = "\u25c9", "\u25cb"            # filled / empty circle (plain BMP characters: Tk 8.6 cannot draw emoji)
+    def eye_click(e):
+        # a click in the 'show' column toggles that mesh in the viewer and leaves the selection alone
+        if tv.identify_region(e.x, e.y) != "cell" or tv.identify_column(e.x) != "#1": return None
+        row = tv.identify_row(e.y)
+        if not row: return "break"
+        i = int(row)
+        hid = S.setdefault("hidden", set())
+        if i in hid: hid.discard(i)
+        else: hid.add(i)
+        vals = list(tv.item(row, "values")); vals[0] = EYE_OFF if i in hid else EYE_ON; tv.item(row, values=vals)
+        draw()
+        return "break"
+    tv.bind("<Button-1>", eye_click, add="+")
+    def set_all_shown(show):
+        S["hidden"] = set() if show else set(int(r) for r in tv.get_children())
+        for r in tv.get_children():
+            vals = list(tv.item(r, "values")); vals[0] = EYE_ON if show else EYE_OFF; tv.item(r, values=vals)
+        draw()
     tv.pack(anchor="w", fill="x")
     S["dmesh"] = {}; S["regions"] = {}
     def set_disp(on):
         for i in selected():
             S["dmesh"][i] = on
-            vals = list(tv.item(str(i), "values")); vals[2] = "yes" if on else "no"; tv.item(str(i), values=vals)
+            vals = list(tv.item(str(i), "values")); vals[3] = "yes" if on else "no"; tv.item(str(i), values=vals)
     brow = ttk.Frame(left); brow.pack(fill="x", pady=2)
     ttk.Button(brow, text="Displace: on", command=lambda: set_disp(True)).pack(side="left", fill="x", expand=True, padx=(0, 2))
     ttk.Button(brow, text="Displace: off", command=lambda: set_disp(False)).pack(side="left", fill="x", expand=True, padx=2)
     ttk.Button(brow, text="UV regions...", command=lambda: region_editor()).pack(side="left", fill="x", expand=True, padx=(2, 0))
+    srow = ttk.Frame(left); srow.pack(fill="x", pady=(0, 2))
+    ttk.Button(srow, text="Show all", command=lambda: set_all_shown(True)).pack(side="left", fill="x", expand=True, padx=(0, 2))
+    ttk.Button(srow, text="Hide all", command=lambda: set_all_shown(False)).pack(side="left", fill="x", expand=True, padx=(2, 0))
 
     def slider(label, lo, hi, init, res, fmt):
         var = tk.DoubleVar(value=init)
@@ -1374,13 +1397,13 @@ def run_gui():
         except Exception as e:
             messagebox.showerror("Open failed", str(e)); return
         S["model"], S["up"] = mdl, {}
-        S["dmesh"], S["regions"] = {}, {}
+        S["dmesh"], S["regions"], S["hidden"] = {}, {}, set()
         pathv.set(p)
         tv.delete(*tv.get_children())
         pre = []
         for i, m in enumerate(mdl.meshes):
             S["dmesh"][i] = bool(m.fc >= 100)          # small meshes (eyes, teeth, lids) default to no displacement
-            tv.insert("", "end", iid=str(i), values=(m.vc, m.fc, "yes" if S["dmesh"][i] else "no", "%s  [%s]%s" % (m.name, m.tex, "" if m.render else "  (hidden)")))
+            tv.insert("", "end", iid=str(i), values=(EYE_ON, m.vc, m.fc, "yes" if S["dmesh"][i] else "no", "%s  [%s]%s" % (m.name, m.tex, "" if m.render else "  (hidden)")))
             if m.ok and m.render and m.tex.upper() not in ("NULL", ""): pre.append(str(i))
         tv.selection_set(pre)
         allp = np.concatenate([mdl.world_pos(m) for m in mdl.meshes if m.render and hasattr(m, "pos") and len(m.pos)])
@@ -1572,6 +1595,7 @@ def run_gui():
         mdl = S["model"]
         out = []
         for i, m in enumerate(mdl.meshes):
+            if i in S.get("hidden", ()): continue          # hidden with its eye in the mesh list
             if not m.ok:
                 # meshes this version can't edit (lightmapped room parts with extra vertex data) are still shown,
                 # plain grey, so a room or building is seen whole
